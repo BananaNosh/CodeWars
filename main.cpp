@@ -117,26 +117,104 @@ void printRow(const Row &row) {
     }
 }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "performance-unnecessary-value-param"
-
-char triangle(std::string row_str) {
-    std::cout << row_str << std::endl;
-    Row currentBlock = stringToBlocks(row_str);
-//    int i = 1;
-    while (currentBlock->next != nullptr || currentBlock->length > 1) {
-        transformRow(currentBlock);
-//        for (int j = 0; j < i; ++j) {
-//            std::cout << " ";
-//        }
-//        i++;
-//        std::cout << blocksToString(currentBlock) << std::endl;
+//#pragma clang diagnostic push
+//#pragma ide diagnostic ignored "performance-unnecessary-value-param"
+//
+//char triangle(std::string row_str) {
+//    std::cout << row_str << std::endl;
+//    Row currentBlock = stringToBlocks(row_str);
+////    int i = 1;
+//    while (currentBlock->next != nullptr || currentBlock->length > 1) {
+//        transformRow(currentBlock);
+////        for (int j = 0; j < i; ++j) {
+////            std::cout << " ";
+////        }
+////        i++;
+////        std::cout << blocksToString(currentBlock) << std::endl;
+//    }
+//    return *blocksToString(currentBlock).c_str();
+//}
+//
+//#pragma clang diagnostic pop
+#include <string>
+#include <vector>
+#include <cstdio>
+int pow(int base, int exponent){
+    if(exponent == 0){
+        return 1;
     }
-    return *blocksToString(currentBlock).c_str();
+    int out = base;
+    for(int i = 0; i < exponent - 1; --exponent){
+        out *= base;
+    }
+    return out;
 }
 
-#pragma clang diagnostic pop
+class tree {
+public:
+    tree(std::string& ptr) : row(ptr) {
+        convto_layer(row.size() - 1);
+        max_depth = layer.size();
+    };
 
+    char solve(uint_fast16_t ini_offset, uint_fast16_t depth){
+        if(depth == max_depth){
+            return row[ini_offset];
+        }
+        return get_colour(solve(ini_offset, 1 + depth),solve(ini_offset + layer[depth], 1 + depth));
+    };
+
+    char get_colour(char a, char b){
+        if(a == b){
+            return a;
+        }
+        else{
+            for(int i = 0; i < 3; ++i){
+                if(!((a == colour[i]) or (b == colour[i]))){
+                    return colour[i];
+                }
+            }
+
+        }
+        return 'O';
+    };
+
+    void convto_layer(int_fast16_t n){
+        if(n == 1){
+            layer.push_back(1);
+            return;
+        }
+        int power = 0;
+        while(n > pow(3, power)){
+            ++power;
+        }
+        --power;
+        while(n != 0){
+            int m = pow(3, power);
+            if(n - m < 0){
+                --power;
+            }
+            else{
+                layer.push_back(m);
+                n -= m;
+            }
+        }
+
+    };
+
+    std::string& row;
+    std::vector<uint_fast16_t> layer;
+    uint_fast8_t max_depth = 0;
+    char colour[3] = {'R', 'G', 'B'};
+};
+
+std::string triangle(std::string row) {
+    tree three(row);
+    char x = three.solve(0,0);
+    std::string out = "";
+    out.push_back(x);
+    return out;
+}
 
 std::string generateRandomRow(int length) {
     std::string row = "";
@@ -150,7 +228,8 @@ std::string generateRandomRow(int length) {
 int main() {
 //    std::cout << triangle("RBRGBRB") << std::endl;
 //    std::cout << triangle("RBRGBRBGGRRRBGBBBGG") << std::endl;
-    const std::string &row = generateRandomRow(10000);
+    const std::string &row = generateRandomRow(1000000);
+    std::cout << row << std::endl;
     std::cout << triangle(row) << std::endl;
     return 0;
 
