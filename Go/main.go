@@ -1,58 +1,101 @@
 package main
 
-import (
-	"fmt"
-	"regexp"
-	"strings"
-)
+import "fmt"
 
+func SolveSnafooz(pcs [6][6][6]int) [6][6][6]int {
+	hasSolution, solution := solveRec(pcs[:], [6]int{})
+	var solutionPcs [6][6][6]int
+	if hasSolution {
+		for i, pieceIndex := range solution {
+			solutionPcs[i] = pcs[pieceIndex-1]
+		}
+	} else {
+		panic("Not solvable")
+	}
+	return solutionPcs
+}
 
-func findUnitLength(bits string) int {
-	trimmed := strings.Trim(bits, "0")
-	for i := range trimmed {
-		reg, _ := regexp.Compile(fmt.Sprintf(`((1|\b)0{%d}(1|\b))|((0|\b)1{%d}(0|\b))`, i+1, i+1))
-		if reg.MatchString(trimmed) {
-			return i+1
+func solveRec(pcs [][6][6]int, solutionPart [6]int) (bool, [6]int) {
+	position := -1
+	for i, p := range solutionPart {
+		if p == 0 {
+			position = i
+			break
 		}
 	}
-	return 0
-}
-
-func DecodeBits(bits string) string {
-	unit := findUnitLength(bits)
-	regMap := []struct {replVal string; regex string}{
-		{"   ", fmt.Sprintf(`0{%d}`, unit * 7)},
-		{"   ", fmt.Sprintf(`0{%d}`, unit * 7)},
-		{" ", fmt.Sprintf(`0{%d}`, unit * 3)},
-		{"-", fmt.Sprintf(`1{%d}`, unit * 3)},
-		{".", fmt.Sprintf(`1{%d}`, unit)},
-		{"", fmt.Sprintf(`0{%d}`, 1)},
+	if position == -1 {
+		return true, solutionPart
 	}
-	for _, regStruct := range regMap {
-		wordSepReg, _ := regexp.Compile(regStruct.regex)
-		bits = wordSepReg.ReplaceAllString(bits, regStruct.replVal)
-	}
-	return strings.TrimSpace(bits)
-}
-
-
-func DecodeMorse(morseCode string) string {
-	var result []string
-	for _, word := range strings.Split(strings.TrimSpace(morseCode), "   ") {
-		var word_result []string
-		for _, letter := range strings.Split(word, " ") {
-			//word_result = append(word_result, MORSE_CODE[letter])
-			word_result = append(word_result, letter)
+	for i := 1; i < 7; i++ {
+		solutionPart[position] = i
+		if check(pcs, position, solutionPart) {
+			hasSolution, solution := solveRec(pcs, solutionPart)
+			if hasSolution {
+				return true, solution
+			}
 		}
-		result = append(result, strings.Join(word_result, ""))
 	}
-	return strings.Join(result, " ")
+	return false, [6]int{}
 }
 
+func check(pcs [][6][6]int, position int, solutionPart [6]int) bool {
+	return true
+}
+
+func printPieces(pcs [6][6][6]int) {
+	for _, p := range pcs {
+		fmt.Println()
+		for i := 0; i < 6; i++ {
+			fmt.Println()
+			for j := 0; j < 6; j++ {
+				fmt.Print(p[i][j])
+				fmt.Print(" ")
+			}
+		}
+	}
+}
 
 func main() {
-	bits := "01110"
-	fmt.Println(findUnitLength(bits))
-	fmt.Println(DecodeMorse(".... . -.--   .--- ..- -.. ."))
-	fmt.Println(DecodeBits(bits))
+	pieces := [6][6][6]int{{{0, 0, 1, 1, 0, 0},
+		{0, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 0},
+		{0, 1, 1, 1, 1, 0},
+		{1, 1, 1, 1, 1, 1},
+		{1, 0, 1, 0, 1, 1}},
+
+		{{0, 1, 0, 0, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 0, 1, 1, 0, 1}},
+
+		{{0, 0, 1, 1, 0, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 0, 1, 1, 0, 0}},
+
+		{{0, 0, 1, 1, 0, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 0, 0, 1, 0}},
+
+		{{0, 0, 1, 1, 0, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 0, 0, 1, 1}},
+
+		{{0, 0, 1, 1, 0, 0},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 0, 0, 1, 0}}}
+	printPieces(SolveSnafooz(pieces))
 }
