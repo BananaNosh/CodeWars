@@ -20,17 +20,18 @@ func (p Positioning) getPieces(pcs [6][6][6]int) [6][6][6]int {
 }
 
 func SolveSnafooz(pcs [6][6][6]int) [6][6][6]int {
-	hasSolution, solution := solveRec(pcs[:], Positioning{})
+	hasSolution, solution := solveRec(pcs[:], Positioning{}, 0)
 	var solutionPcs [6][6][6]int
 	if hasSolution {
 		solutionPcs = solution.getPieces(pcs)
+		printPositioning(solution)
 	} else {
 		panic("Not solvable")
 	}
 	return solutionPcs
 }
 
-func solveRec(pcs [][6][6]int, positioning Positioning) (bool, Positioning) {
+func solveRec(pcs [][6][6]int, positioning Positioning, depth int) (bool, Positioning) {
 	currentPosition := -1
 	var isSet [6]bool
 	for i, p := range positioning.positionedPieces {
@@ -48,20 +49,30 @@ func solveRec(pcs [][6][6]int, positioning Positioning) (bool, Positioning) {
 			continue
 		}
 		positioning.positionedPieces[currentPosition] = i
-		for i := 0; i < 4; i++ {
-			positioning.rotations[currentPosition] = i
-			for _, j := range []bool{false, true} {
-				positioning.flipped[currentPosition] = j
+		for rotation := 0; rotation < 4; rotation++ {
+			positioning.rotations[currentPosition] = rotation
+			for _, flipped := range []bool{false, true} {
+				positioning.flipped[currentPosition] = flipped
+				for i := 0; i < depth; i++ {
+					fmt.Print("   ")
+				}
+				fmt.Printf("Check %v, rot:%v, flipped: %v\n", i, rotation, flipped)
 				if check(pcs, currentPosition, positioning) {
-					printPositioning(positioning)
-					hasSolution, solution := solveRec(pcs, positioning)
+					//fmt.Printf("depth check succesful: %v\n", depth)
+					//printPositioning(positioning)
+					hasSolution, solution := solveRec(pcs, positioning, depth+1)
 					if hasSolution {
 						return true, solution
 					}
 				}
+				if currentPosition == 0 {
+					//fmt.Printf("depth no solution: %v\n", depth)
+					return false, Positioning{}
+				}
 			}
 		}
 	}
+	//fmt.Printf("depth no solution: %v\n", depth)
 	return false, Positioning{}
 }
 
@@ -134,8 +145,10 @@ func check(pcs [][6][6]int, newPosition int, positioning Positioning) bool {
 			continue
 		}
 		currentPiece := pcs[positioning.positionedPieces[newPosition]-1]
-		rotatePiece(currentPiece[:], n[1])
-		flipPiece(currentPiece[:])
+		rotatePiece(currentPiece[:], n[1]+positioning.rotations[newPosition]) // add rotation of piece to rotation to have the neighbouring site on top
+		if !positioning.flipped[newPosition] {                                // additional flip to counteract the mirror effect of neighbouring pieces
+			flipPiece(currentPiece[:])
+		}
 		neighbourPiece := pcs[pieceAtNeighbourPositionIndex-1]
 		rotatePiece(neighbourPiece[:], n[2])
 		for j := 1; j < 5; j++ {
@@ -194,6 +207,14 @@ func printPositioning(positioning Positioning) {
 	fmt.Printf("%v %v %v\n", positioning.positionedPieces[1], positioning.positionedPieces[2], positioning.positionedPieces[3])
 	fmt.Printf("  %v  \n", positioning.positionedPieces[4])
 	fmt.Printf("  %v  \n", positioning.positionedPieces[5])
+	fmt.Printf("  %v  \n", positioning.rotations[0])
+	fmt.Printf("%v %v %v\n", positioning.rotations[1], positioning.rotations[2], positioning.rotations[3])
+	fmt.Printf("  %v  \n", positioning.rotations[4])
+	fmt.Printf("  %v  \n", positioning.rotations[5])
+	fmt.Printf("  %v  \n", positioning.flipped[0])
+	fmt.Printf("%v %v %v\n", positioning.flipped[1], positioning.flipped[2], positioning.flipped[3])
+	fmt.Printf("  %v  \n", positioning.flipped[4])
+	fmt.Printf("  %v  \n", positioning.flipped[5])
 }
 
 func main() {
@@ -239,6 +260,92 @@ func main() {
 			{1, 1, 1, 1, 1, 0},
 			{0, 1, 1, 1, 1, 1},
 			{0, 1, 0, 0, 1, 0}}}
+	pieces = [6][6][6]int{{ // as in example
+		{1, 1, 0, 1, 0, 0},
+		{1, 1, 1, 1, 1, 1},
+		{0, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1},
+		{0, 0, 1, 0, 1, 1}},
+
+		{{0, 0, 1, 0, 0, 0},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 0, 0, 0}},
+
+		{{1, 1, 0, 1, 0, 0},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 0, 0, 1, 1}},
+
+		{{0, 0, 0, 0, 0, 0},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 0, 1, 0, 0}},
+
+		{{1, 0, 1, 1, 0, 0},
+			{1, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 0, 1, 1, 1, 0}},
+
+		{{0, 1, 0, 0, 0, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 0, 1, 0, 1, 1}}}
+	pieces = [6][6][6]int{{ // already correct
+		{1, 1, 0, 1, 0, 1},
+		{1, 1, 1, 1, 1, 0},
+		{0, 1, 1, 1, 1, 0},
+		{0, 1, 1, 1, 1, 0},
+		{1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 0, 0, 0}}, //
+
+		{{0, 0, 1, 1, 0, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{1, 1, 0, 1, 1, 0}}, //
+
+		{{0, 0, 0, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0}}, //
+
+		{{0, 0, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 0, 1, 0}}, //
+
+		{{0, 0, 0, 0, 0, 0},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 0, 0, 1, 0}}, //
+
+		{{0, 0, 1, 1, 0, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{0, 0, 1, 0, 1, 0}}} //
+
+	//rotatePiece(pieces[1][:], 2)
 	printPieces(SolveSnafooz(pieces))
 
 	//pieces[1] = mutatedPiece(pieces[0], 1, true)
