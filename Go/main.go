@@ -150,7 +150,10 @@ func check(pcs [][6][6]int, newPosition int, positioning Positioning) bool {
 			flipPiece(currentPiece[:])
 		}
 		neighbourPiece := pcs[pieceAtNeighbourPositionIndex-1]
-		rotatePiece(neighbourPiece[:], n[2])
+		rotatePiece(neighbourPiece[:], n[2]+positioning.rotations[n[0]-1])
+		if positioning.flipped[n[0]-1] {
+			flipPiece(neighbourPiece[:])
+		}
 		for j := 1; j < 5; j++ {
 			if currentPiece[0][j]+neighbourPiece[0][j] != 1 {
 				return false
@@ -174,7 +177,10 @@ func check(pcs [][6][6]int, newPosition int, positioning Positioning) bool {
 				continue
 			} else {
 				cornerNeighbourPiece := pcs[cornerNeighbourPositionIndex-1]
-				rotatePiece(cornerNeighbourPiece[:], cornerNeighbour[2])
+				rotatePiece(cornerNeighbourPiece[:], cornerNeighbour[2]+positioning.rotations[cornerNeighbour[0]-1])
+				if positioning.flipped[cornerNeighbour[0]-1] {
+					flipPiece(cornerNeighbourPiece[:])
+				}
 				corner := cornerNeighbourPiece[0][5-j]
 				if corner+sum != 1 {
 					return false
