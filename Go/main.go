@@ -14,7 +14,7 @@ func (p Positioning) getPieces(pcs [6][6][6]int) [6][6][6]int {
 	var pieces [6][6][6]int
 	for i, pieceIndex := range p.positionedPieces {
 		correctPieceIndex := pieceIndex - 1
-		pieces[i] = mutatedPiece(pcs[correctPieceIndex], p.rotations[correctPieceIndex], p.flipped[correctPieceIndex])
+		pieces[i] = mutatedPiece(pcs[correctPieceIndex], p.rotations[i], p.flipped[i])
 	}
 	return pieces
 }
@@ -145,15 +145,17 @@ func check(pcs [][6][6]int, newPosition int, positioning Positioning) bool {
 			continue
 		}
 		currentPiece := pcs[positioning.positionedPieces[newPosition]-1]
-		rotatePiece(currentPiece[:], n[1]+positioning.rotations[newPosition]) // add rotation of piece to rotation to have the neighbouring site on top
-		if !positioning.flipped[newPosition] {                                // additional flip to counteract the mirror effect of neighbouring pieces
+		if positioning.flipped[newPosition] {
 			flipPiece(currentPiece[:])
 		}
+		rotatePiece(currentPiece[:], n[1]+positioning.rotations[newPosition]) // add rotation of piece to rotation to have the neighbouring site on top
+		flipPiece(currentPiece[:])
+		// additional flip to counteract the mirror effect of neighbouring pieces
 		neighbourPiece := pcs[pieceAtNeighbourPositionIndex-1]
-		rotatePiece(neighbourPiece[:], n[2]+positioning.rotations[n[0]-1])
 		if positioning.flipped[n[0]-1] {
 			flipPiece(neighbourPiece[:])
 		}
+		rotatePiece(neighbourPiece[:], n[2]+positioning.rotations[n[0]-1])
 		for j := 1; j < 5; j++ {
 			if currentPiece[0][j]+neighbourPiece[0][j] != 1 {
 				return false
@@ -177,10 +179,10 @@ func check(pcs [][6][6]int, newPosition int, positioning Positioning) bool {
 				continue
 			} else {
 				cornerNeighbourPiece := pcs[cornerNeighbourPositionIndex-1]
-				rotatePiece(cornerNeighbourPiece[:], cornerNeighbour[2]+positioning.rotations[cornerNeighbour[0]-1])
 				if positioning.flipped[cornerNeighbour[0]-1] {
 					flipPiece(cornerNeighbourPiece[:])
 				}
+				rotatePiece(cornerNeighbourPiece[:], cornerNeighbour[2]+positioning.rotations[cornerNeighbour[0]-1])
 				corner := cornerNeighbourPiece[0][5-j]
 				if corner+sum != 1 {
 					return false
@@ -195,6 +197,55 @@ func printPieces(pcs [6][6][6]int) {
 	for _, p := range pcs {
 		printPiece(p)
 	}
+}
+
+func printPiecesStructured(pcs [6][6][6]int) {
+	lineIndices := [72][2]int{}
+	for i := 0; i < 6; i++ {
+		lineIndices[i*3] = [2]int{-1, -1}
+		lineIndices[i*3+1] = [2]int{0, i}
+		lineIndices[i*3+2] = [2]int{-1, -1}
+	}
+	for i := 0; i < 6; i++ {
+		offset := 18
+		for j := 0; j < 3; j++ {
+			lineIndices[offset+i*3+j] = [2]int{j + 1, i}
+		}
+	}
+	for k := 0; k < 2; k++ {
+		for i := 0; i < 6; i++ {
+			offset := 36 + 18*k
+			lineIndices[offset+i*3] = [2]int{-1, -1}
+			lineIndices[offset+i*3+1] = [2]int{4 + k, i}
+			lineIndices[offset+i*3+2] = [2]int{-1, -1}
+		}
+	}
+	for i, lineIndex := range lineIndices {
+		if i > 0 && i%3 == 0 {
+			fmt.Println()
+		} else if i > 0 {
+			fmt.Print("| ")
+		}
+		if i > 0 && i%18 == 0 {
+			for j := 0; j < 20; j++ {
+				fmt.Print("--")
+			}
+			fmt.Println()
+		}
+		lineStr := ""
+		if lineIndex[0] >= 0 {
+			line := pcs[lineIndex[0]][lineIndex[1]]
+			for j := 0; j < 6; j++ {
+				lineStr += fmt.Sprintf("%v ", line[j])
+			}
+		} else {
+			for j := 0; j < 6; j++ {
+				lineStr += "  "
+			}
+		}
+		fmt.Printf(lineStr)
+	}
+	fmt.Println()
 }
 
 func printPiece(p [6][6]int) {
@@ -314,46 +365,103 @@ func main() {
 		{0, 1, 1, 1, 1, 0},
 		{0, 1, 1, 1, 1, 0},
 		{1, 1, 1, 1, 1, 1},
-		{1, 1, 1, 0, 0, 0}}, //
+		{1, 1, 1, 0, 0, 0}}, // 1
 
 		{{0, 0, 1, 1, 0, 0},
 			{1, 1, 1, 1, 1, 1},
 			{0, 1, 1, 1, 1, 0},
-			{0, 1, 1, 1, 1, 1},
-			{1, 1, 1, 1, 1, 0},
-			{1, 1, 0, 1, 1, 0}}, //
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 0, 1, 1}}, // 2
 
 		{{0, 0, 0, 1, 1, 1},
 			{0, 1, 1, 1, 1, 1},
 			{1, 1, 1, 1, 1, 1},
-			{0, 1, 1, 1, 1, 1},
 			{1, 1, 1, 1, 1, 1},
-			{1, 1, 1, 1, 1, 0}}, //
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0}}, // 3
 
 		{{0, 0, 1, 1, 1, 0},
 			{0, 1, 1, 1, 1, 1},
 			{0, 1, 1, 1, 1, 1},
 			{0, 1, 1, 1, 1, 0},
 			{0, 1, 1, 1, 1, 0},
-			{1, 1, 1, 0, 1, 0}}, //
+			{1, 1, 1, 0, 1, 0}}, // 4
 
 		{{0, 0, 0, 0, 0, 0},
 			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
 			{0, 1, 1, 1, 1, 0},
-			{1, 1, 1, 1, 1, 1},
-			{0, 1, 1, 1, 1, 0},
-			{0, 1, 0, 0, 1, 0}}, //
+			{0, 1, 0, 0, 1, 0}}, // 5
 
 		{{0, 0, 1, 1, 0, 1},
 			{0, 1, 1, 1, 1, 1},
 			{1, 1, 1, 1, 1, 1},
 			{1, 1, 1, 1, 1, 0},
 			{0, 1, 1, 1, 1, 0},
-			{0, 0, 1, 0, 1, 0}}} //
+			{0, 0, 1, 0, 1, 0}}} // 6
 
 	//rotatePiece(pieces[1][:], 2)
-	printPieces(SolveSnafooz(pieces))
+	//rotatePiece(pieces[3][:], 3)
+	//flipPiece(pieces[2][:])
+	//rotatePiece(pieces[4][:], 1)
+	//snafoozPieces := SolveSnafooz(pieces)
+	SolveSnafooz(pieces)
+	//printPieces(snafoozPieces)
+	printPiecesStructured(pieces)
 
 	//pieces[1] = mutatedPiece(pieces[0], 1, true)
 	//printPieces(pieces)
+
+	pieces2 := [6][6][6]int{
+		{{0, 0, 1, 1, 0, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{0, 0, 1, 1, 0, 0}},
+
+		{{1, 1, 0, 0, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 0, 1, 1, 1}},
+
+		{{0, 0, 1, 0, 0, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 0, 0, 1, 0}},
+
+		{{0, 0, 1, 1, 0, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{0, 0, 1, 1, 0, 0}},
+
+		{{0, 0, 1, 1, 0, 0},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1},
+			{0, 1, 1, 1, 1, 0},
+			{1, 1, 0, 0, 1, 1}},
+
+		{{0, 0, 1, 1, 0, 1},
+			{0, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 0},
+			{1, 1, 1, 1, 1, 0},
+			{0, 1, 1, 1, 1, 1},
+			{0, 1, 0, 0, 1, 1}}}
+	out := SolveSnafooz(pieces2)
+	printPiecesStructured(out)
+	//var shifted [6][6][6]int
+	//for i := 0; i < 6; i++ {
+	//	shifted[i] = out[(i+3)%6]
+	//}
+	//fmt.Println()
+	//printPiecesStructured(shifted)
 }
